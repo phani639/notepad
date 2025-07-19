@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Simple Notepad App</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding: 20px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .note-card {
+            margin-bottom: 15px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .note-content {
+            white-space: pre-wrap;
+        }
+        body.dark-mode {
+            background-color: #121212;
+            color: #e0e0e0;
+        }
+        body.dark-mode .card {
+            background-color: #1e1e1e;
+            color: #e0e0e0;
+        }
+        body.dark-mode .form-control {
+            background-color: #2c2c2c;
+            color: #e0e0e0;
+            border-color: #444;
+        }
+        body.dark-mode .form-control::placeholder {
+            color: #aaa;
+        }
+        body.dark-mode .btn.btn-warning {
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mb-4 text-center">📝 Simple Notepad</h1>
+        <div class="mb-3 text-end">
+            <button id="toggleDarkModeBtn" class="btn btn-secondary me-2">
+                <i id="darkModeIcon" class="bi bi-moon"></i>
+            </button>
+            <button id="addNoteBtn" class="btn btn-success me-2">
+                <i class="bi bi-plus-circle"></i> Add Note
+            </button>
+            <button id="saveAllBtn" class="btn btn-primary">
+                <i class="bi bi-save"></i> Save All
+            </button>
+        </div>
+        <div id="notesContainer" class="row"></div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const notesContainer = document.getElementById('notesContainer');
+        const addNoteBtn = document.getElementById('addNoteBtn');
+        const saveAllBtn = document.getElementById('saveAllBtn');
+        const toggleDarkModeBtn = document.getElementById('toggleDarkModeBtn');
+        const darkModeIcon = document.getElementById('darkModeIcon');
+
+        let notes = JSON.parse(localStorage.getItem('notes')) || [];
+        let isDarkMode = JSON.parse(localStorage.getItem('darkMode')) || false;
+
+        function saveNotes() {
+            localStorage.setItem('notes', JSON.stringify(notes));
+        }
+
+        function applyDarkMode(isDark) {
+            if (isDark) {
+                document.body.classList.add('dark-mode');
+                darkModeIcon.className = 'bi bi-sun';
+            } else {
+                document.body.classList.remove('dark-mode');
+                darkModeIcon.className = 'bi bi-moon';
+            }
+            localStorage.setItem('darkMode', JSON.stringify(isDark));
+        }
+
+        toggleDarkModeBtn.addEventListener('click', () => {
+            isDarkMode = !isDarkMode;
+            applyDarkMode(isDarkMode);
+        });
+
+        function renderNotes() {
+            notesContainer.innerHTML = '';
+            notes.forEach((note, index) => {
+                const col = document.createElement('div');
+                col.className = 'col-md-4';
+                const card = document.createElement('div');
+                card.className = 'card note-card shadow-sm';
+
+                const cardBody = document.createElement('div');
+                cardBody.className = 'card-body';
+
+                const title = document.createElement('h5');
+                title.className = 'card-title';
+                title.textContent = note.title || "Untitled";
+
+                const content = document.createElement('p');
+                content.className = 'card-text note-content';
+                content.textContent = note.content || "";
+
+                const titleInput = document.createElement('input');
+                titleInput.className = 'form-control mb-2 d-none';
+                titleInput.value = note.title;
+
+                const contentInput = document.createElement('textarea');
+                contentInput.className = 'form-control mb-2 d-none';
+                contentInput.rows = 4;
+                contentInput.value = note.content;
+
+                const editBtn = document.createElement('button');
+                editBtn.className = 'btn btn-sm btn-warning me-2';
+                editBtn.innerHTML = '<i class="bi bi-pencil"></i> Edit';
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'btn btn-sm btn-danger';
+                deleteBtn.innerHTML = '<i class="bi bi-trash"></i> Delete';
+
+                editBtn.addEventListener('click', () => {
+                    const isEditing = !titleInput.classList.contains('d-none');
+                    if (!isEditing) {
+                        title.classList.add('d-none');
+                        content.classList.add('d-none');
+                        titleInput.classList.remove('d-none');
+                        contentInput.classList.remove('d-none');
+                        editBtn.innerHTML = '<i class="bi bi-check-circle"></i> Save';
+                    } else {
+                        notes[index].title = titleInput.value.trim() || "Untitled";
+                        notes[index].content = contentInput.value.trim();
+                        saveNotes();
+                        renderNotes();
+                    }
+                });
+
+                deleteBtn.addEventListener('click', () => {
+                    if (confirm('Are you sure you want to delete this note?')) {
+                        notes.splice(index, 1);
+                        saveNotes();
+                        renderNotes();
+                    }
+                });
+
+                cardBody.appendChild(title);
+                cardBody.appendChild(titleInput);
+                cardBody.appendChild(content);
+                cardBody.appendChild(contentInput);
+                cardBody.appendChild(editBtn);
+                cardBody.appendChild(deleteBtn);
+
+                card.appendChild(cardBody);
+                col.appendChild(card);
+                notesContainer.appendChild(col);
+            });
+        }
+
+        addNoteBtn.addEventListener('click', () => {
+            notes.push({
+                title: "Untitled",
+                content: ""
+            });
+            saveNotes();
+            renderNotes();
+        });
+
+        saveAllBtn.addEventListener('click', () => {
+            saveNotes();
+            alert('All notes saved!');
+        });
+
+        applyDarkMode(isDarkMode);
+        renderNotes();
+    </script>
+</body>
+</html>
